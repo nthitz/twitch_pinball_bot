@@ -50,14 +50,14 @@ function listenToChat() {
 
     if (lowercaseMessage === '!trip') {
       obs.send('SetSourceFilterVisibility', {
-        sourceName: 'playfield',
+        sourceName: '920',
         filterName: 'blocky',
         filterEnabled: true,
       }) // returns Promise
     }
     if (lowercaseMessage === '!reset') {
       obs.send('SetSourceFilterVisibility', {
-        sourceName: 'playfield',
+        sourceName: '920',
         filterName: 'blocky',
         filterEnabled: false,
       }) // returns Promise
