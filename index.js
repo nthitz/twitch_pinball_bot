@@ -1,7 +1,10 @@
 require('dotenv').config()
-
+const express = require('express')
 const OBSWebSocket = require('obs-websocket-js');
 const tmi = require('tmi.js');
+
+const webserver = express()
+webserver.listen(4040)
 
 const twitchUsername = process.env.TWITCH_USERNAME
 const twitchPassword = process.env.TWITCH_PASSWORD
@@ -40,43 +43,62 @@ const combinedFilters = [
   {
     name: 'hype',
     filters: ['grow', 'vignette'],
+    type: 'combined',
   },
   {
     name: '8bit',
     filters: ['blocky', '90s'],
+    type: 'combined',
   }
 ]
 
 function disableFilters() {
-  console.log('disable filters')
-  console.log(filters.length)
   filters.forEach(filter => {
     filter.enabled = false;
-    obs.send('SetSourceFilterVisibility', {
-      sourceName: playfieldSourceName,
-      filterName: filter.name,
-      filterEnabled: false,
-    })
+    setFilterStatus(filter)
   })
 }
 
-function toggleFilter(filter) {
-  console.log(filter)
-  filter.enabled = !filter.enabled
+function setFilterStatus(filter) {
   obs.send('SetSourceFilterVisibility', {
     sourceName: playfieldSourceName,
     filterName: filter.name,
     filterEnabled: filter.enabled,
   }).catch(errorHandler)
 }
+function toggleFilter(filter) {
+  filter.enabled = !filter.enabled
+  setFilterStatus(filter)
+}
+
+function enableFilter(filter) {
+  filter.enabled = true
+  setFilterStatus(filter)
+}
 
 function errorHandler(err) { // Promise convention dicates you have a catch on every chain.
   console.log(err);
 }
+
+function doFilterFunction(filterName, f) {
+  const filter = filters.find(d => d.name === filterName)
+  const combinedFilter = combinedFilters.find(d => d.name === filterName)
+  if (filter) {
+    f(filter)
+  } else if(combinedFilter) {
+    combinedFilter.filters.forEach(_filterName => {
+      const filter = filters.find(d => d.name === _filterName)
+      filter && f(filter)
+    })
+  } else {
+    console.log('missingfilter' ,lowercaseMessage)
+    return
+  }
+}
+
 function listenToChat() {
   obs.send('GetSourceFilters', { sourceName: playfieldSourceName }).then(response => {
     filters = response.filters.filter(d => d.type === 'shader_filter')
-    console.log(filters)
     disableFilters()
   }).catch(errorHandler);
 
@@ -106,20 +128,23 @@ function listenToChat() {
 
     if (filterCommandList.includes(lowercaseMessage)) {
       const filterName =  lowercaseMessage.slice(1)
-      const filter = filters.find(d => d.name === filterName)
-      const combinedFilter = combinedFilters.find(d => d.name === filterName)
-      if (filter) {
-        toggleFilter(filter)
-      } else if(combinedFilter) {
-        combinedFilter.filters.forEach(_filterName => {
-          const filter = filters.find(d => d.name === _filterName)
-          filter && toggleFilter(filter)
-        })
-      } else {
-        console.log('missingfilter' ,lowercaseMessage)
-        return
-      }
+      doFilterFunction(filterName, toggleFilter)
+
     }
 
   });
 }
+
+
+webserver.get('/getFilters', (req, res) => {
+  res.send([...filters, ...combinedFilters])
+})
+
+webserver.get('/reset', (req, res) => {
+  disableFilters()
+})
+
+webserver.get('/enableFilter', (req, res) => {
+
+  doFilterFunction(req.query.f, enableFilter)
+})
