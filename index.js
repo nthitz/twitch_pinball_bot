@@ -30,6 +30,7 @@ const chat = new tmi.Client({
 });
 
 
+
 Promise.all([
   obs.connect({ address: obswsHost, password: obsPassword }),
   chat.connect()
@@ -38,6 +39,8 @@ Promise.all([
 const playfieldSourceName = '920'
 
 let filters = []
+
+let filtersToNotReset = ['default-shader-dont-delete']
 
 const combinedFilters = [
   {
@@ -49,6 +52,10 @@ const combinedFilters = [
     name: '8bit',
     filters: ['blocky', '90s'],
     type: 'combined',
+  },
+  {
+    name: 'matrix',
+    filters: ['code', 'sobel'],
   }
 ]
 
@@ -98,7 +105,7 @@ function doFilterFunction(filterName, f) {
 
 function listenToChat() {
   obs.send('GetSourceFilters', { sourceName: playfieldSourceName }).then(response => {
-    filters = response.filters.filter(d => d.type === 'shader_filter')
+    filters = response.filters.filter(d => d.type === 'shader_filter' && !filtersToNotReset.includes(d.name))
     disableFilters()
   }).catch(errorHandler);
 
