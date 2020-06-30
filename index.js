@@ -29,8 +29,6 @@ const chat = new tmi.Client({
 	channels: [ twitchChannel ]
 });
 
-
-
 Promise.all([
   obs.connect({ address: obswsHost, password: obsPassword }),
   chat.connect()
@@ -58,6 +56,9 @@ const combinedFilters = [
     filters: ['code', 'sobel'],
   }
 ]
+
+const randomFilterAfter = 1000 * 60 * 5;
+let setRandomFilterTimeout = null;
 
 function disableFilters() {
   filters.forEach(filter => {
@@ -103,16 +104,38 @@ function doFilterFunction(filterName, f) {
   }
 }
 
+function scheduleRandomFilter() {
+  clearTimeout(setRandomFilterTimeout)
+  setRandomFilterTimeout = setTimeout(() => {
+
+    const randomFilter = filters[Math.floor(Math.random() * filters.length)]
+    chat.say(twitchChannel, `!${randomFilter.name}`)
+    scheduleRandomFilter();
+  }, randomFilterAfter)
+}
+
+
 function listenToChat() {
   obs.send('GetSourceFilters', { sourceName: playfieldSourceName }).then(response => {
     filters = response.filters.filter(d => d.type === 'shader_filter' && !filtersToNotReset.includes(d.name))
     disableFilters()
   }).catch(errorHandler);
+  scheduleRandomFilter()
 
   console.log('listening to chat')
   chat.on('message', (channel, tags, message, self) => {
-    if(self) return;
     const lowercaseMessage = message.toLowerCase().trim()
+    const filterCommandList = [...filters, ...combinedFilters].map(filter => `!${filter.name}`)
+
+    if (filterCommandList.includes(lowercaseMessage)) {
+      const filterName =  lowercaseMessage.slice(1)
+      doFilterFunction(filterName, toggleFilter)
+    }
+
+    if(self) return;
+
+    scheduleRandomFilter()
+
     if(lowercaseMessage === '!hello') {
       chat.say(channel, `@${tags.username}, heya!`);
     }
@@ -126,18 +149,12 @@ function listenToChat() {
       disableFilters();
     }
 
-    const filterCommandList = [...filters, ...combinedFilters].map(filter => `!${filter.name}`)
     if (lowercaseMessage === '!filters') {
       const fs = filterCommandList.join(' ')
       const filterMessage = `try these fun filters ${fs}`
       chat.say(channel, filterMessage)
     }
 
-    if (filterCommandList.includes(lowercaseMessage)) {
-      const filterName =  lowercaseMessage.slice(1)
-      doFilterFunction(filterName, toggleFilter)
-
-    }
 
   });
 }
