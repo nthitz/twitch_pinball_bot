@@ -27,7 +27,7 @@ function App() {
   return (
     <div className="App">
       <div className='chat'>
-        <iframe width="100%" height="100%" id="nthitz" src="https://www.twitch.tv/embed/nthitz/chat?parent=localhost"></iframe>
+        <iframe title="chat" width="100%" height="100%" id="nthitz" src="https://www.twitch.tv/embed/nthitz/chat?parent=localhost"></iframe>
       </div>
       <div className='buttons'>
         {buttons}
