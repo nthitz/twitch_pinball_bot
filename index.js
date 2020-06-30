@@ -59,20 +59,19 @@ const combinedFilters = [
 
 const randomFilterAfter = 1000 * 60 * 5;
 let setRandomFilterTimeout = null;
+let lastRandomFilter = null
 
 function disableFilters() {
-  filters.forEach(filter => {
-    filter.enabled = false;
-    setFilterStatus(filter)
-  })
+  filters.forEach(disableFilter)
 }
 
 function setFilterStatus(filter) {
-  obs.send('SetSourceFilterVisibility', {
+  const req = {
     sourceName: playfieldSourceName,
     filterName: filter.name,
     filterEnabled: filter.enabled,
-  }).catch(errorHandler)
+  }
+  obs.send('SetSourceFilterVisibility', req).catch(errorHandler)
 }
 function toggleFilter(filter) {
   filter.enabled = !filter.enabled
@@ -83,6 +82,12 @@ function enableFilter(filter) {
   filter.enabled = true
   setFilterStatus(filter)
 }
+
+function disableFilter(filter) {
+  filter.enabled = false
+  setFilterStatus(filter)
+}
+
 
 function errorHandler(err) { // Promise convention dicates you have a catch on every chain.
   console.log(err);
@@ -107,9 +112,14 @@ function doFilterFunction(filterName, f) {
 function scheduleRandomFilter() {
   clearTimeout(setRandomFilterTimeout)
   setRandomFilterTimeout = setTimeout(() => {
-
-    const randomFilter = filters[Math.floor(Math.random() * filters.length)]
-    chat.say(twitchChannel, `!${randomFilter.name}`)
+    if (lastRandomFilter) {
+      disableFilter(lastRandomFilter)
+    }
+    const disabledFilters = filters.filter(d => !d.filteredEnabed)
+    const randomFilter = disabledFilters[Math.floor(Math.random() * disabledFilters.length)]
+    enableFilter(randomFilter)
+    lastRandomFilter = randomFilter
+    chat.say(`#${twitchChannel}`, `!${randomFilter.name}`)
     scheduleRandomFilter();
   }, randomFilterAfter)
 }
@@ -124,15 +134,18 @@ function listenToChat() {
 
   console.log('listening to chat')
   chat.on('message', (channel, tags, message, self) => {
+    if(self) return;
     const lowercaseMessage = message.toLowerCase().trim()
     const filterCommandList = [...filters, ...combinedFilters].map(filter => `!${filter.name}`)
 
     if (filterCommandList.includes(lowercaseMessage)) {
       const filterName =  lowercaseMessage.slice(1)
+      if (lastRandomFilter && lastRandomFilter.name === filterName) {
+        lastRandomFilter = null
+      }
       doFilterFunction(filterName, toggleFilter)
     }
 
-    if(self) return;
 
     scheduleRandomFilter()
 
