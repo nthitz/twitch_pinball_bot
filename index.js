@@ -179,9 +179,11 @@ webserver.get('/getFilters', (req, res) => {
 
 webserver.get('/reset', (req, res) => {
   disableFilters()
+  res.send('ok')
 })
 
 webserver.get('/enableFilter', (req, res) => {
 
   doFilterFunction(req.query.f, enableFilter)
+  res.send('ok')
 })
