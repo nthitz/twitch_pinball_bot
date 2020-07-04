@@ -57,6 +57,7 @@ const combinedFilters = [
   }
 ]
 
+const scenes = ['starting soon', 'pause', 'Scene']
 const randomFilterAfter = 1000 * 60 * 5;
 let setRandomFilterTimeout = null;
 let lastRandomFilter = null
@@ -177,6 +178,10 @@ webserver.get('/getFilters', (req, res) => {
   res.send([...filters, ...combinedFilters])
 })
 
+webserver.get('/getScenes', (req, res) => {
+  res.send(scenes)
+})
+
 webserver.get('/reset', (req, res) => {
   disableFilters()
   res.send('ok')
@@ -187,3 +192,16 @@ webserver.get('/enableFilter', (req, res) => {
   doFilterFunction(req.query.f, enableFilter)
   res.send('ok')
 })
+
+webserver.get('/switchToScene', (req, res) => {
+  const switchToScene = (scene) => {
+
+    const req = {
+      'scene-name': scene,
+    }
+    obs.send('SetCurrentScene', req).catch(errorHandler)
+  }
+  switchToScene(req.query.scene)
+  res.send('ok')
+})
+
