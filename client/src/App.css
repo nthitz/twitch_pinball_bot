@@ -11,14 +11,27 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
+  flex-flow: row wrap;
 }
 
 .button {
   border: 1px solid #000;
   font-size: 5vh;
-  flex: 1;
+  display: inline;
+  width: 24vw;
   justify-content: center;
   text-align: center;
   display: flex;
   flex-direction: column;
+}
+.button > div {
+  display: inline;
+}
+
+.button.reset {
+  background-color: rgba(255, 0, 0, 0.3);
+}
+
+.button.scene {
+  background-color: rgba(0, 0, 255, 0.3);
 }

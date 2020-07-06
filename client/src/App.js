@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
-
+import classnames from 'classnames';
 function App() {
   const [filters, setFilters] = useState([])
   const [scenes, setScenes] = useState([])
@@ -18,11 +18,22 @@ function App() {
 
   }, [])
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      window.fetch('/getScenes')
+      .then(r => r.json())
+      .then(s => {
+        /// this looks dumb but it's me just trying to keep the network conn alive
+      })
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   const enableFilter = filter => event => {
-    if (filter.type === 'reset') {
+    if (filter === 'reset') {
       window.fetch('/reset')
     } else {
-      window.fetch(`/enableFilter?f=${filter.name}`)
+      window.fetch(`/enableFilter?f=${filter}`)
     }
   }
   const switchToScene = scene => event => {
@@ -30,13 +41,13 @@ function App() {
   }
 
 
-  const filtersWithButtons = [...filters.filter(d => d.type === 'combined'), { name: 'reset', type: 'reset'}]
+  const filtersWithButtons = [...filters, 'reset']
 
   const buttons = filtersWithButtons.map(filter =>
-    <div key={filter.name} onClick={enableFilter(filter)} className='button'><div>{filter.name}</div></div>
+    <div key={filter} onClick={enableFilter(filter)} className={classnames('button', { reset: filter === 'reset'})}><div>{filter}</div></div>
   )
   const sceneButtons = scenes.map(scene =>
-    <div key={scene} onClick={switchToScene(scene)} className='button'><div>{scene}</div></div>
+    <div key={scene} onClick={switchToScene(scene)} className='button scene'><div>{scene}</div></div>
   )
   return (
     <div className="App">

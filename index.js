@@ -35,9 +35,10 @@ Promise.all([
 ]).then(listenToChat);
 
 const playfieldSourceName = '920'
+const faceSourceName = 'face';
 
 let filters = []
-
+let faceFilters = []
 let filtersToNotReset = ['default-shader-dont-delete']
 
 const combinedFilters = [
@@ -57,18 +58,23 @@ const combinedFilters = [
   }
 ]
 
+const filtersToExpose = [
+  'hype', '8bit', 'matrix', 'lake', 'sketch', 'glitch', 'rgbglitch'
+]
+
 const scenes = ['starting soon', 'pause', 'Scene']
-const randomFilterAfter = 1000 * 60 * 5;
+const randomFilterAfter = 1000 * 60 * 2;
 let setRandomFilterTimeout = null;
 let lastRandomFilter = null
 
 function disableFilters() {
-  filters.forEach(disableFilter)
+  filters.forEach(f => disableFilter(f, playfieldSourceName))
+  faceFilters.forEach(f => disableFilter(f, faceSourceName))
 }
 
-function setFilterStatus(filter) {
+function setFilterStatus(filter, source=playfieldSourceName) {
   const req = {
-    sourceName: playfieldSourceName,
+    sourceName: source,
     filterName: filter.name,
     filterEnabled: filter.enabled,
   }
@@ -79,14 +85,14 @@ function toggleFilter(filter) {
   setFilterStatus(filter)
 }
 
-function enableFilter(filter) {
+function enableFilter(filter, source=playfieldSourceName) {
   filter.enabled = true
-  setFilterStatus(filter)
+  setFilterStatus(filter, source)
 }
 
-function disableFilter(filter) {
+function disableFilter(filter, source=playfieldSourceName) {
   filter.enabled = false
-  setFilterStatus(filter)
+  setFilterStatus(filter, source)
 }
 
 
@@ -105,7 +111,7 @@ function doFilterFunction(filterName, f) {
       filter && f(filter)
     })
   } else {
-    console.log('missingfilter' ,lowercaseMessage)
+    console.log('missingfilter' , filterName)
     return
   }
 }
@@ -114,13 +120,13 @@ function scheduleRandomFilter() {
   clearTimeout(setRandomFilterTimeout)
   setRandomFilterTimeout = setTimeout(() => {
     if (lastRandomFilter) {
-      disableFilter(lastRandomFilter)
+      disableFilter(lastRandomFilter, faceSourceName)
     }
     const disabledFilters = filters.filter(d => !d.filteredEnabed)
     const randomFilter = disabledFilters[Math.floor(Math.random() * disabledFilters.length)]
-    enableFilter(randomFilter)
+    enableFilter(randomFilter, faceSourceName)
     lastRandomFilter = randomFilter
-    chat.say(`#${twitchChannel}`, `!${randomFilter.name}`)
+    // chat.say(`#${twitchChannel}`, `!${randomFilter.name}`)
     scheduleRandomFilter();
   }, randomFilterAfter)
 }
@@ -129,6 +135,10 @@ function scheduleRandomFilter() {
 function listenToChat() {
   obs.send('GetSourceFilters', { sourceName: playfieldSourceName }).then(response => {
     filters = response.filters.filter(d => d.type === 'shader_filter' && !filtersToNotReset.includes(d.name))
+    disableFilters()
+  }).catch(errorHandler);
+  obs.send('GetSourceFilters', { sourceName: faceSourceName }).then(response => {
+    faceFilters = response.filters.filter(d => d.type === 'shader_filter' && !filtersToNotReset.includes(d.name))
     disableFilters()
   }).catch(errorHandler);
   scheduleRandomFilter()
@@ -164,9 +174,21 @@ function listenToChat() {
     }
 
     if (lowercaseMessage === '!filters') {
-      const fs = filterCommandList.join(' ')
+      const fs = filtersToExpose.map(filter => `!${filter}`).join(' ')
       const filterMessage = `try these fun filters ${fs}`
       chat.say(channel, filterMessage)
+    }
+
+    // const vaccuousCommands = ['!commands', '!socials', '!ig', '!insta', '!twitter']
+    // if (vaccuousCommands.includes(lowercaseMessage)) {
+    //   chat.say(channel, 'Arrest the cops that murdered Breonna Taylor')
+    // }
+
+    console.log(tags)
+    let gttvMessageSent = false
+    if (tags.username === 'gametimetelevision' && !gttvMessageSent) {
+      gttvMessageSent = true
+      chat.say(channel, 'yo @gametimetelevision try out !filters')
     }
 
 
@@ -175,7 +197,7 @@ function listenToChat() {
 
 
 webserver.get('/getFilters', (req, res) => {
-  res.send([...filters, ...combinedFilters])
+  res.send(filtersToExpose)
 })
 
 webserver.get('/getScenes', (req, res) => {
