@@ -59,7 +59,7 @@ const combinedFilters = [
 ]
 
 const filtersToExpose = [
-  'hype', '8bit', 'matrix', 'lake', 'sketch', 'glitch', 'rgbglitch'
+  'hype', '8bit', 'lake', 'sketch', 'glitch', 'rgbglitch'
 ]
 
 const scenes = ['starting soon', 'pause', 'Scene']
@@ -78,6 +78,7 @@ function setFilterStatus(filter, source=playfieldSourceName) {
     filterName: filter.name,
     filterEnabled: filter.enabled,
   }
+  console.log(req)
   obs.send('SetSourceFilterVisibility', req).catch(errorHandler)
 }
 function toggleFilter(filter) {
@@ -154,6 +155,7 @@ function listenToChat() {
       if (lastRandomFilter && lastRandomFilter.name === filterName) {
         lastRandomFilter = null
       }
+      disableFilters()
       doFilterFunction(filterName, toggleFilter)
     }
 
@@ -175,7 +177,7 @@ function listenToChat() {
 
     if (lowercaseMessage === '!filters') {
       const fs = filtersToExpose.map(filter => `!${filter}`).join(' ')
-      const filterMessage = `try these fun filters ${fs}`
+      const filterMessage = `try these fun filters ${fs} or !reset`
       chat.say(channel, filterMessage)
     }
 
@@ -183,13 +185,6 @@ function listenToChat() {
     // if (vaccuousCommands.includes(lowercaseMessage)) {
     //   chat.say(channel, 'Arrest the cops that murdered Breonna Taylor')
     // }
-
-    console.log(tags)
-    let gttvMessageSent = false
-    if (tags.username === 'gametimetelevision' && !gttvMessageSent) {
-      gttvMessageSent = true
-      chat.say(channel, 'yo @gametimetelevision try out !filters')
-    }
 
 
   });
