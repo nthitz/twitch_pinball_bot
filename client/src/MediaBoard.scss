@@ -1,0 +1,13 @@
+.MediaBoard {
+    position: relative;
+    audio {
+        opacity: 0;
+    }
+    video {
+        position: fixed;
+        width: 100%;
+        top: 0;
+        left: 0;
+    }
+}
+

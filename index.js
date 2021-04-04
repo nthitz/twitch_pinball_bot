@@ -3,6 +3,18 @@ const express = require('express')
 const OBSWebSocket = require('obs-websocket-js');
 const tmi = require('tmi.js');
 
+const io = require("socket.io")(3030, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+let mediaChatSocket = null
+io.on("connection", socket => {
+  console.log('connected')
+  mediaChatSocket = socket
+})
+
 const webserver = express()
 webserver.listen(4040)
 
@@ -12,6 +24,7 @@ const twitchChannel = process.env.TWITCH_CHANNEL
 
 const obswsHost = process.env.OBS_HOST
 const obsPassword = process.env.OBS_PASSWORD
+
 
 
 const obs = new OBSWebSocket();
@@ -29,13 +42,16 @@ const chat = new tmi.Client({
 	channels: [ twitchChannel ]
 });
 
-Promise.all([
-  obs.connect({ address: obswsHost, password: obsPassword }),
-  chat.connect()
-]).then(listenToChat);
-
+try {
+  Promise.all([
+    obs.connect({ address: obswsHost, password: obsPassword }),
+    chat.connect()
+  ]).then(listenToChat);
+} catch (error) {
+  console.log(error)
+}
 const playfieldSourceName = '920'
-const faceSourceName = 'face';
+const faceSourceName = '615';
 
 let filters = []
 let faceFilters = []
@@ -132,6 +148,9 @@ function scheduleRandomFilter() {
   }, randomFilterAfter)
 }
 
+// should match media commands in client... :shrug emoji:
+const mediaCommands = ['notapun', 'thitz', 'onfire', 'jokes']
+
 
 function listenToChat() {
   obs.send('GetSourceFilters', { sourceName: playfieldSourceName }).then(response => {
@@ -166,11 +185,6 @@ function listenToChat() {
       chat.say(channel, `@${tags.username}, heya!`);
     }
 
-    if (lowercaseMessage.includes('mcgrath')) {
-      chat.say(channel, `/timeout ${tags.username} 60 don't say McGrath! `);
-      chat.say(channel, `@${tags.username} shh we don't say the MCG word here`);
-    }
-
     if (lowercaseMessage === '!reset') {
       disableFilters();
     }
@@ -181,10 +195,16 @@ function listenToChat() {
       chat.say(channel, filterMessage)
     }
 
-    // const vaccuousCommands = ['!commands', '!socials', '!ig', '!insta', '!twitter']
-    // if (vaccuousCommands.includes(lowercaseMessage)) {
-    //   chat.say(channel, 'Arrest the cops that murdered Breonna Taylor')
-    // }
+    console.log(lowercaseMessage)
+    mediaCommands.forEach(joke => {
+      if (lowercaseMessage.split(' ').includes(`!${joke}`)) {
+        console.log('joke', joke)
+
+        if (mediaChatSocket) {
+          mediaChatSocket.emit('joke', joke)
+        }
+      }
+    })
 
 
   });
