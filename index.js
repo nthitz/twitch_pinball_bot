@@ -134,6 +134,7 @@ function doFilterFunction(filterName, f) {
 }
 
 function scheduleRandomFilter() {
+  return
   clearTimeout(setRandomFilterTimeout)
   setRandomFilterTimeout = setTimeout(() => {
     if (lastRandomFilter) {
@@ -177,8 +178,8 @@ function listenToChat() {
       if (lastRandomFilter && lastRandomFilter.name === filterName) {
         lastRandomFilter = null
       }
-      disableFilters()
-      doFilterFunction(filterName, toggleFilter)
+      // disableFilters()
+      // doFilterFunction(filterName, toggleFilter)
     }
 
 
@@ -195,7 +196,7 @@ function listenToChat() {
     if (lowercaseMessage === '!filters') {
       const fs = filtersToExpose.map(filter => `!${filter}`).join(' ')
       const filterMessage = `try these fun filters ${fs} or !reset`
-      chat.say(channel, filterMessage)
+      // chat.say(channel, filterMessage)
     }
 
     console.log(lowercaseMessage)
