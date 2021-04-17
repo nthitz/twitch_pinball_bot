@@ -251,6 +251,8 @@ webserver.get('/switchToScene', (req, res) => {
 webserver.get('/joke', (req, res) => {
   const j = req.query.joke
   if (mediaCommands.includes(j)) {
+    console.log('force joke', j)
     mediaChatSocket.emit('joke', j)
   }
+  res.send('ok')
 })

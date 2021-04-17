@@ -53,7 +53,7 @@ export default function ControlPanel(props) {
     const sceneButtons = scenes.map(scene =>
         <div key={scene} onClick={switchToScene(scene)} className='button scene'><div>{scene}</div></div>
     )
-    const jokes = ['notapun']
+    const jokes = ['onfire']
 
     const jokeButtons = jokes.map(joke =>
         <div key={joke} onClick={tellJoke(joke)} className='button'><div>{joke}</div></div>
