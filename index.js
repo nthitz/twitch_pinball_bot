@@ -51,7 +51,7 @@ try {
   console.log(error)
 }
 const playfieldSourceName = '920'
-const faceSourceName = '615';
+const faceSourceName = 'face';
 
 let filters = []
 let faceFilters = []
@@ -150,6 +150,9 @@ function scheduleRandomFilter() {
 
 // should match media commands in client... :shrug emoji:
 const mediaCommands = ['notapun', 'thitz', 'onfire', 'jokes']
+const lastMediaChatTime = {}
+mediaCommands.forEach(command => lastMediaChatTime[command] = 0)
+const jokeTimeout = 60 * 1000;
 
 
 function listenToChat() {
@@ -199,8 +202,10 @@ function listenToChat() {
     mediaCommands.forEach(joke => {
       if (lowercaseMessage.split(' ').includes(`!${joke}`)) {
         console.log('joke', joke)
-
-        if (mediaChatSocket) {
+        const now = Date.now()
+        const tellJoke = (now - lastMediaChatTime[joke]) > jokeTimeout
+        if (mediaChatSocket && tellJoke) {
+          lastMediaChatTime[joke] = now
           mediaChatSocket.emit('joke', joke)
         }
       }
@@ -242,3 +247,9 @@ webserver.get('/switchToScene', (req, res) => {
   res.send('ok')
 })
 
+webserver.get('/joke', (req, res) => {
+  const j = req.query.joke
+  if (mediaCommands.includes(j)) {
+    mediaChatSocket.emit('joke', j)
+  }
+})

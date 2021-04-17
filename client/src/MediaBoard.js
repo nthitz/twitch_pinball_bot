@@ -40,12 +40,12 @@ export default function Media(props) {
             console.log(joke)
             const matchingMedia = media.find(d => d.cmd === joke)
             const now = Date.now()
-            let tellJoke = false
-            if (!matchingMedia.lastToldAt) {
-                tellJoke = true
-            } else if (now - matchingMedia.lastToldAt > jokeTimeout) {
-                tellJoke = true
-            }
+            let tellJoke = true
+            // if (!matchingMedia.lastToldAt) {
+            //     tellJoke = true
+            // } else if (now - matchingMedia.lastToldAt > jokeTimeout) {
+            //     tellJoke = true
+            // }
             if (matchingMedia && tellJoke) {
                 matchingMedia.lastToldAt = now
                 console.log(matchingMedia)
@@ -67,7 +67,9 @@ export default function Media(props) {
         {mediaFromChat.map((item, index) => {
             const Tag = item.video ? 'video' : 'audio'
             const ended = mediaEnded.includes(index)
-
+            if (ended) {
+                return null
+            }
             return (
                 <Tag
                     key={index}
@@ -76,7 +78,7 @@ export default function Media(props) {
                     autoPlay
                     controls
                     volume={ended ? 0 : 1}
-                    style={{ opacity: ended ? 0 : 1}}
+                    style={{ opacity: !ended && item.video ? 1 : 0}}
                 />
             )
         })}
